@@ -42,6 +42,20 @@ For more info on specifying these options, please run:
 
     java -jar target/kvsrv-1.0-SNAPSHOT.jar -h
     
+ There is a possibility to run the integration tests, if wanted. To run the (poor mans) load test, type:
+ 
+    mvn test -Dtest=KvSrvLoadIT
+    
+A PDF report with some performance stats is produced, but it is not that useful.. :(
+
+The tests was verified on a Mac Book Pro:
+
+    MacBook Pro (Retina, 15-inch, Early 2013)
+    2,4 GHz Intel Core i7
+    8 GB 1600 MHz DDR3
+
+It was noted that sometimes tests failed due to OOM exceptions.
+    
 
 ## Implementation notes
 The core design of the KV server is based around [netty](http://netty.io/) and [MapDB](http://www.mapdb.org/). This 

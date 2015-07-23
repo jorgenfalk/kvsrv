@@ -27,6 +27,7 @@ Prerequisites:
 
  * JDK 1.7
  * Maven 3
+ * git
 
 clone this repo and run
 

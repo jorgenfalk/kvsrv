@@ -10,7 +10,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * Stateful decoder. Can only decode
+ * Stateful protocol decoder.
+ *
+ * The protocol is defined as:
+ *
+ *  <command name><TAB><key name><TAB><payload size><NEWLINE><payload bytes>
+ *
+ * The decoder will take a byte buffer and parse it into a Command object. The Command is just a very simple (anaemic) POJO.
+ * Almost all validation is done in the handler.
+ *
+ * TODO: Impl timeout in FSM. Need to be able to release the channel if client doesn't send full message
+ * TODO: Impl overflow guard for ByteBuf in all states, not just for the payload.
  */
 public class CommandDecoder extends ByteToMessageDecoder {
     private final static ByteBufProcessor FIND_TAB = new ByteBufProcessor() {
@@ -18,6 +28,7 @@ public class CommandDecoder extends ByteToMessageDecoder {
             return value != '\t';
         }
     };
+    private static final int MAX_PAYLOAD_SIZE = 1000000;
 
     private enum STATE {
 
@@ -63,6 +74,9 @@ public class CommandDecoder extends ByteToMessageDecoder {
                 }
 
                 final int size = Integer.parseInt(payloadSize);
+
+                Preconditions.checkArgument(size <= MAX_PAYLOAD_SIZE, "Payload size exceeds max size " + MAX_PAYLOAD_SIZE);
+
                 out.setPayloadSize(size);
 
                 return size > 0 ? PAYLOAD : FINAL;
@@ -94,6 +108,8 @@ public class CommandDecoder extends ByteToMessageDecoder {
             }
         };
 
+
+
         abstract STATE decode(ChannelHandlerContext ctx, ByteBuf in, Command out);
 
 
@@ -118,7 +134,6 @@ public class CommandDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-//        System.err.println(in.toString(StandardCharsets.UTF_8));
 
         if (current == STATE.INITIAL) {
             cmd = new Command();

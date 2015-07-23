@@ -67,4 +67,8 @@ public class KvClient {
     public String delete(String key) throws IOException {
         return send("delete" + "\t" + key + "\t" + "0"+ "\n");
     }
+    public String stats(String key) throws IOException {
+        return send("stats" + "\t" + key + "\t" + "0" + "\n");
+    }
+
 }

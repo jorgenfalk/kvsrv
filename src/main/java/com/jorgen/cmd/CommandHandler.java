@@ -3,7 +3,6 @@ package com.jorgen.cmd;
 import com.jorgen.store.KvStore;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.logging.Log;
@@ -12,8 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
-
-//@ChannelHandler.Sharable
+// TODO: Is this @Shareable? kvStore is the only state.
 public class CommandHandler extends ChannelHandlerAdapter {
 
     private static final Log LOG = LogFactory.getLog(CommandHandler.class);
@@ -26,11 +24,11 @@ public class CommandHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws ExecutionException, InterruptedException {
-//        System.err.println(msg);
-//        ctx.write(createResponse(OK));
 
         Command cmd = (Command) msg;
-//
+
+        // TODO: A bit poor error handling. Don't catch 'em all, unrecoverable error should make server crash.
+        // TODO: Not OCP. Impl abstract CommandFactory
         switch (cmd.getCmd().toLowerCase()) {
             case "set":
                 kvStore.set(cmd.getKey(), cmd.getPayload());
@@ -52,11 +50,25 @@ public class CommandHandler extends ChannelHandlerAdapter {
                     ctx.write(createResponse(e.getMessage()));
                 }
                 break;
+            case "stats":
+                try {
+                    final String stat;
+                    final String key = cmd.getKey();
+
+                    if (key.equals("num_connections")){
+                        // TODO: Not Implemented. CommandHandler need ref to some (?) Netty bootstrap or Listener.
+                        ctx.write(createResponse("Not implemented"));
+                    } else {
+                        stat = kvStore.stats(key);
+                        ctx.write(createResponse(OK, stat.getBytes(StandardCharsets.UTF_8)));
+                    }
+                } catch (Exception e) {
+                    ctx.write(createResponse(e.getMessage()));
+                }
+                break;
             default:
                 ctx.write(createResponse("No such command: " + cmd.getCmd()));
         }
-
-
     }
 
     @Override
@@ -73,6 +85,7 @@ public class CommandHandler extends ChannelHandlerAdapter {
         ctx.close();
     }
 
+    // TODO: Create Response Encoder
     // <status><TAB><payload size><NEWLINE><payload bytes>
     private ByteBuf createResponse(String msg, byte[] payload) {
 

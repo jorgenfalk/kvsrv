@@ -1,7 +1,5 @@
 package com.jorgen;
 
-import com.jorgen.cmd.CommandDecoder;
-import com.jorgen.cmd.CommandHandler;
 import com.jorgen.store.KvStore;
 import com.jorgen.store.KvStoreMapDB;
 import org.apache.commons.cli.*;
@@ -13,7 +11,7 @@ public class Main {
     private static final Log LOG = LogFactory.getLog(Main.class);
 
     private static final String DEFAULT_PORT = "3434";
-    private static final String DEFAULT_THREADS = "1";
+    private static final String DEFAULT_THREADS = "10";
     private static final String DEFAULT_FILE = "my.db";
 
 

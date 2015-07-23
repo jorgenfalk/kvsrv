@@ -1,27 +1,21 @@
 package com.jorgen;
 
-import org.easetech.easytest.annotation.Parallel;
-import org.easetech.easytest.annotation.Repeat;
-import org.easetech.easytest.annotation.Report;
-import org.easetech.easytest.runner.DataDrivenTestRunner;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * IT for KvSrv
+ * TODO: No proper IT. Should initiate clean DB from Maven Failsafe (pre-it)
+ *
+ * This IT does not test odd edge cases. This is mainly done in the unit test suite. To be able to do fine grained tests
+ * at this level, a full mock setup should be available, otherwise testing becomes very hard.
  */
-@RunWith(DataDrivenTestRunner.class)
-@Report
-@Parallel(threads=50)
 public class KvSrvIT {
 
     private KvClient client;
@@ -43,30 +37,43 @@ public class KvSrvIT {
     }
 
     @Test
-    @Repeat(times=200)
     public void fullScenario() throws Exception{
-        final String key = UUID.randomUUID().toString();
-        byte[] buf  = new byte[new Random().nextInt(10000) + 1];
-        Arrays.fill(buf, (byte)'a');
-        final String value = new String(buf);
+        String key = "foo";
+        String value = "bar";
 
-        assertEquals("ok", client.set(key, value));
+        // Init
+        assertEquals("ok", client.set(key, "some_value")); // Make sure key is not in DB.
+        assertEquals("ok", client.delete(key));
+        int keys = Integer.parseInt(client.stats("num_keys")); // Get initial key count
+
+        // Set & Get
+        assertEquals("ok", client.set(key, "old_value")); //
+        assertEquals("ok", client.set(key, value));       // Overwrite old_value
+        assertEquals("Should have added only one element", keys + 1, Integer.parseInt(client.stats("num_keys")));
+
+        // DB size
+        // This is hard to test! Due to compactation, pre allocation etc in DB, the size is not guaranteed to increase
+        // for such a small insert.
+        assertTrue("DB should have some size", Long.parseLong(client.stats("db_size")) > 0);
+
+        // Delete
         assertEquals(value, client.get(key));
         assertEquals("ok", client.delete(key));
         assertEquals("key not found: " + key, client.get(key));
+
+        // Num keys
+        assertEquals(keys, Integer.parseInt(client.stats("num_keys"))); // Back to the original amount of keys
+
+        // Num connections
+        // TODO: impl num_connections stats
+        assertEquals("Not implemented", client.stats("num_connections"));
     }
 
     @Test
-    @Repeat(times=10)
-    public void bigPayload() throws Exception{
-        final String key = UUID.randomUUID().toString();
-        byte[] buf  = new byte[new Random().nextInt(1000000) + 1];
-        Arrays.fill(buf, (byte)'b');
-        final String value = new String(buf);
-
-        assertEquals("ok", client.set(key, value));
-        assertEquals(value, client.get(key));
-        assertEquals("ok", client.delete(key));
-        assertEquals("key not found: " + key, client.get(key));
+    @Ignore
+    public void manualTestOfPersistentStore() throws Exception{
+//        assertEquals("ok", client.set("foo", "bar"));
+        assertEquals("bar", client.get("foo"));
     }
+
 }

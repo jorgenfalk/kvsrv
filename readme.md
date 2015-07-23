@@ -57,6 +57,14 @@ around or requirements changed. The current status can be considered a MVP (Mini
  * Max file size for DB
  * Max key size
  * Stats(num_connections) in not implemented
+ * Logging is not working
+ * Timeout handling and security. If the protocol is misused, the server can easily crash or freeze.
+ * Memory and performance. No profiling is done, so no optimizations are done. All hope of a good performance is put on
+   the third party libraries.
+ * Error handling is not good enough. For example, fatal errors and logic signaling must be separated. Now there's a very
+   optimistic catch 'em all-approach.
+ * Testing. Apart from the unit tests and the integration test suite, very little time has been spend on testing the product.
+ * And probably a million more things that I can think of right now.... ;)
 
 There is also a number of TODO:s in the code, indicating some of the areas that probably should need some more improvement.
  
